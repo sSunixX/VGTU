@@ -1,0 +1,29 @@
+---
+name: Bug report
+about: Report a problem with VGTU
+title: "[Bug] "
+labels: bug
+assignees: ""
+---
+
+## Describe the bug
+What happened?
+
+## Minecraft version
+26.3
+
+## Environment
+- GPU:
+- Driver:
+- Vulkan version:
+
+## Steps to reproduce
+1.
+2.
+3.
+
+## Expected behavior
+What should happen?
+
+## Logs or screenshots
+Attach relevant logs or screenshots.
