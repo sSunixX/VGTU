@@ -1,42 +1,77 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+# VGTU — Vulkan Graphics Temporal Upscaler
 
-# Base44 App — TanStack Start
+VGTU stands for **Vulkan Graphics Temporal Upscaler**. It is an experimental project exploring a Vulkan-based rendering path for Minecraft, with Vitrail as the intended Vulkan integration point.
 
-A full-stack Base44 app: [TanStack Start](https://tanstack.com/start) (React 19, plain JavaScript) with file-based routes, server functions and server routes, server-rendered and hosted by db.
+> **Status: Pre-alpha. No public, installable Minecraft build is available yet.** The project is under development. Do not treat this repository as a finished Minecraft mod or assume temporal upscaling is already working.
 
-## What is in the starter
+## What is VGTU?
 
-| Route | File |
-| --- | --- |
-| `/` | `src/routes/index.jsx` — a server-rendered page whose loader calls a server function |
-| `GET /api/time` | `src/routes/api/time.js` — a server route: a raw HTTP endpoint next to the pages |
+VGTU is intended as a Vulkan-oriented fork/port of GGTU for Minecraft 26.3. The goal is to move rendering work that expects an OpenGL/Iris environment toward Minecraft's Vulkan rendering path through Vitrail.
 
-## Run locally
+The name describes the project's intended direction:
 
-```bash
-npm ci
-base44 login   # one-time per machine
-base44 link    # one-time per clone
-base44 dev     # local backend + app together
-```
+- **Vulkan Graphics** — use Vulkan's explicit graphics pipeline and resource-management model.
+- **Temporal Upscaler** — investigate temporal image reconstruction: rendering at a lower internal resolution and using information from previous frames to reconstruct a higher-resolution output.
 
-## Build and publish
+### Why Vulkan?
 
-```bash
-npm run build         # -> dist/client (assets) + dist/server (the Worker)
-base44 deploy         # or publish from the Base44 builder
-```
+Vulkan provides explicit control over GPU resources, command submission, pipelines, descriptors, image layouts, and synchronization. This makes it a natural target for a renderer designed to operate on a native Vulkan path, rather than trying to attach an OpenGL-only pipeline to it.
 
-There is no `index.html`: the HTML document is rendered on the server from `src/routes/__root.jsx`. The build runs through the [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/), so dev and build both execute server code in `workerd`.
+Vulkan does **not** automatically make a game faster. Performance depends on the implementation, GPU, driver, and workload. VGTU needs real-world testing before any performance claims can be made.
 
-## How the pieces fit
+## What is temporal upscaling?
 
-- **Pages** are files in `src/routes/`. A route's `loader` runs on the server for a document request and in the browser for a client navigation; `Route.useLoaderData()` gives the component the resolved data.
-- **Server functions** (`src/lib/server-fns.js`) are RPCs created with `createServerFn`. `src/start.js` runs every one of them through `authMiddleware`, which sends the visitor's token along, so `context.getBase44()` returns a client acting as that visitor and entity access rules apply. `context.getBase44().asServiceRole` bypasses them, so use it only after authenticating the caller (`.middleware([requireUser])`) and checking they may access the records involved: server functions and server routes are public endpoints anyone can call with any input. See **Server Security** in `AGENTS.md`. Call it only in handlers that need Base44: it reads the platform headers, and a handler that never calls it works without them.
-- **Secrets** are read in server code with `import { secrets } from "base44:runtime"` → `secrets.get("NAME")`, inside a handler. Never `process.env`.
-- **Server routes** (`src/routes/api/*.js`) are raw HTTP endpoints for URLs something other than the app's own code requests (webhooks, downloads, feeds); the app's pages call server functions. `src/start.js` runs every request through `base44RequestMiddleware`, so their `server.handlers` receive the same `context.getBase44()` (`({ request, params, context }) => …`).
-- **Server-only code** lives in `*.server.js` files (TanStack refuses to bundle them for the browser).
-- **Auth** is resolved client-side after hydration (`useAuth()`); the server is anonymous on a document request, so give per-user pages `ssr: false`.
-- **Sign-in and gated pages** are not wired in the starter: `src/components/auth/` holds the pages (login, register, password reset, MCP consent) and a login gate for `src/routes/_authed/`, to add when the app needs them. See **Adding Authentication** in `AGENTS.md`.
-- **AI**: TanStack AI is installed and runs on the Base44 AI gateway, with no API key and usage billed to the app's AI credits. `gatewayModel(context.getBase44())` in `src/lib/ai.server.js` builds the adapter; `AGENTS.md` has a streaming chat example (a server route plus `useChat`).
-- **Caching**: the platform caches only what a route opts into via `headers()` (`Cache-Control: public, s-maxage=…`). Everything else is served fresh.
+A temporal upscaler reconstructs a higher-resolution image using the current frame together with information retained from previous frames. A robust implementation generally needs inputs such as motion information, depth, and a history buffer, plus techniques to reduce ghosting and other reconstruction artefacts.
+
+**Important:** temporal upscaling is part of VGTU's intended direction and name. It is not confirmed as implemented in the current project. The name should not be read as a claim that the feature is already available.
+
+## Intended project targets
+
+The current project direction describes:
+
+- Minecraft **26.3**
+- Vulkan rendering through **Vitrail**
+- A Vulkan-side port of rendering paths that currently depend on OpenGL
+- Investigation of OptiFine-style shader-pack compatibility
+- Future evaluation of temporal upscaling
+
+Compatibility, stability, and performance remain experimental. Check the repository's Issues and Releases pages for updates.
+
+## Development status
+
+VGTU is pre-alpha. Work to validate and complete includes:
+
+1. Confirm Vitrail integration points and supported Minecraft/mod-loader versions.
+2. Port and validate rendering passes on Vulkan.
+3. Test shader-pack loading and rendering behaviour.
+4. Validate resizing, depth conventions, synchronization, and frame-history handling.
+5. Implement and evaluate temporal reconstruction before describing it as a working feature.
+6. Publish an installable build only after it can be built and tested.
+
+Bug reports and suggestions are welcome through [GitHub Issues](https://github.com/sSunixX/VGTU/issues).
+
+## Development tools and AI assistance
+
+This project was made with assistance from **ChatGPT (OpenAI)** and **Base44**.
+
+- **ChatGPT** was used as an AI assistant for planning, explanations, problem-solving, and code-related assistance.
+- **Base44** was used to help create/scaffold the project's web interface and application structure.
+- The project owner directed the work and is responsible for reviewing decisions, checking generated output, and testing the project.
+
+This disclosure is included to be transparent about the tools used. AI-assisted output can be incorrect or incomplete; code and technical claims still need review and testing.
+
+## Releases and downloads
+
+There are currently **no published installable VGTU releases**. The repository contains development materials, not a confirmed Minecraft-ready download.
+
+When a tested build is available, it will be published on the [GitHub Releases page](https://github.com/sSunixX/VGTU/releases), with its supported Minecraft version, mod loader, dependencies, installation steps, and known limitations.
+
+Do not attach the source ZIP as though it were a compiled Minecraft mod. A game-ready artifact must be built and tested separately.
+
+## Credits and third-party projects
+
+VGTU's development direction references GGTU and the Vitrail renderer. Their names, code, and assets remain subject to their respective authors' licences and terms. Compatibility does not imply endorsement.
+
+## License
+
+No license has been declared for this repository. Until a license is added, do not assume that the code is licensed for reuse, redistribution, or modification.
