@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "vgtu",
+  "version": "${version}",
+  "name": "VGTU",
+  "description": "Adaptive render-scale control and temporal-rendering integration for Minecraft 26.3 on Vulkan through Vitrail.",
+  "authors": ["sSunixX"],
+  "contact": {
+    "homepage": "https://github.com/sSunixX/VGTU",
+    "sources": "https://github.com/sSunixX/VGTU",
+    "issues": "https://github.com/sSunixX/VGTU/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.vgtu.VgtuClient"
+    ]
+  },
+  "mixins": [
+    "vgtu.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "vitrail": ">=0.13.0-beta",
+    "sodium": "0.9.x"
+  },
+  "breaks": {
+    "ggtu": "*"
+  }
+}
