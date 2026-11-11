@@ -9,8 +9,8 @@ import java.util.Arrays;
 /**
  * Conservative dynamic-resolution controller.
  *
- * Samples wall time spent inside GameRenderer.render(), not a GPU timestamp query.
- * CPU work, VSync, driver waits, and GPU execution can all affect this measurement.
+ * Samples GameRenderer.render() wall time, not pure GPU time. CPU work, driver waits and VSync
+ * can affect it, so the controller uses hysteresis and verifies that a downscale helped.
  */
 public final class PerformanceGovernor {
     private static final int WINDOW_SIZE = 120;
@@ -19,6 +19,8 @@ public final class PerformanceGovernor {
     private static final int PROBE_FRAMES = 180;
 
     private static final long[] FRAME_TIMES = new long[WINDOW_SIZE];
+    // Reused by percentile90Ms() to avoid allocating a new array on each controller evaluation.
+    private static final long[] SORT_BUFFER = new long[WINDOW_SIZE];
 
     private static int windowSize;
     private static int nextIndex;
@@ -46,7 +48,6 @@ public final class PerformanceGovernor {
 
     public static synchronized void recordFrame(long frameNanos) {
         if (!VitrailBridge.isShaderPackActive()) {
-            // Do not let non-shader or menu frames drive the scaler.
             windowSize = 0;
             nextIndex = 0;
             overBudgetWindows = 0;
@@ -82,7 +83,6 @@ public final class PerformanceGovernor {
         if (!VgtuConfig.autoScale || likelyCpuOrPresentBound) {
             return;
         }
-
         if (totalFrames - lastScaleChangeFrame < CHANGE_COOLDOWN_FRAMES) {
             return;
         }
@@ -152,7 +152,6 @@ public final class PerformanceGovernor {
         } else {
             noGainSteps = 0;
         }
-
         probePending = false;
 
         if (noGainSteps >= 2) {
@@ -161,7 +160,6 @@ public final class PerformanceGovernor {
             VgtuConfig.renderScale = baselineScale;
             VitrailBridge.setRenderScale(baselineScale);
             VgtuConfig.save();
-
             VgtuClient.LOGGER.warn("VGTU paused adaptive downscaling and restored its starting scale "
                     + "({}% from {}%): lowering resolution did not meaningfully improve frame time. "
                     + "The session may be CPU-bound or limited by VSync/frame pacing. Use /vgtu reset "
@@ -173,14 +171,10 @@ public final class PerformanceGovernor {
         if (windowSize == 0) {
             return 0.0;
         }
-
-        long[] sorted = new long[windowSize];
-        for (int i = 0; i < windowSize; i++) {
-            sorted[i] = FRAME_TIMES[i];
-        }
-        Arrays.sort(sorted);
-        int index = Math.max(0, (int) Math.ceil(sorted.length * 0.90) - 1);
-        return sorted[index] / 1_000_000.0;
+        System.arraycopy(FRAME_TIMES, 0, SORT_BUFFER, 0, windowSize);
+        Arrays.sort(SORT_BUFFER, 0, windowSize);
+        int index = Math.max(0, (int) Math.ceil(windowSize * 0.90) - 1);
+        return SORT_BUFFER[index] / 1_000_000.0;
     }
 
     public static synchronized void setAutoScale(boolean enabled) {
