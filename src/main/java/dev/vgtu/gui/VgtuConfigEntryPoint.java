@@ -4,6 +4,7 @@ import dev.vgtu.config.VgtuConfig;
 import dev.vgtu.performance.PerformanceGovernor;
 import dev.vgtu.render.VitrailBridge;
 import net.caffeinemc.mods.sodium.api.config.ConfigEntryPoint;
+import net.caffeinemc.mods.sodium.api.config.StorageEventHandler;
 import net.caffeinemc.mods.sodium.api.config.option.OptionImpact;
 import net.caffeinemc.mods.sodium.api.config.structure.ConfigBuilder;
 import net.caffeinemc.mods.sodium.api.config.structure.ModOptionsBuilder;
@@ -12,6 +13,8 @@ import net.minecraft.resources.Identifier;
 
 /** Registers VGTU controls in Sodium's Video Settings screen. */
 public final class VgtuConfigEntryPoint implements ConfigEntryPoint {
+    private static final StorageEventHandler STORAGE_HANDLER = VgtuConfig::save;
+
     @Override
     public void registerConfigLate(ConfigBuilder builder) {
         ModOptionsBuilder options = builder.registerOwnModOptions();
@@ -29,7 +32,8 @@ public final class VgtuConfigEntryPoint implements ConfigEntryPoint {
                                 .setDefaultValue(QualityPreset.NATIVE)
                                 .setImpact(OptionImpact.VARIES)
                                 .setBinding(QualityPreset::apply,
-                                        () -> QualityPreset.fromScale(VgtuConfig.renderScale)))
+                                        () -> QualityPreset.fromScale(VgtuConfig.renderScale))
+                                .setStorageHandler(STORAGE_HANDLER))
                         .addOption(builder.createIntegerOption(Identifier.parse("vgtu:render_scale"))
                                 .setName(Component.literal("Render Scale"))
                                 .setTooltip(Component.literal(
@@ -39,7 +43,8 @@ public final class VgtuConfigEntryPoint implements ConfigEntryPoint {
                                 .setDefaultValue(100)
                                 .setImpact(OptionImpact.VARIES)
                                 .setBinding(PerformanceGovernor::setManualScale,
-                                        () -> VgtuConfig.renderScale))))
+                                        () -> VgtuConfig.renderScale)
+                                .setStorageHandler(STORAGE_HANDLER))))
                 .addPage(builder.createOptionPage()
                         .setName(Component.literal("Adaptive Scaling"))
                         .addOptionGroup(builder.createOptionGroup()
@@ -50,7 +55,8 @@ public final class VgtuConfigEntryPoint implements ConfigEntryPoint {
                                                 "Adjusts render scale gradually to approach the target below. It cannot improve CPU-bound or VSync-bound scenes."))
                                         .setDefaultValue(true)
                                         .setBinding(PerformanceGovernor::setAutoScale,
-                                                () -> VgtuConfig.autoScale))
+                                                () -> VgtuConfig.autoScale)
+                                        .setStorageHandler(STORAGE_HANDLER))
                                 .addOption(builder.createIntegerOption(Identifier.parse("vgtu:target_fps"))
                                         .setName(Component.literal("Adaptive FPS Target"))
                                         .setTooltip(Component.literal(
@@ -59,14 +65,16 @@ public final class VgtuConfigEntryPoint implements ConfigEntryPoint {
                                         .setValueFormatter(value -> Component.literal(value + " FPS"))
                                         .setDefaultValue(60)
                                         .setBinding(PerformanceGovernor::setTargetFps,
-                                                () -> VgtuConfig.targetFps))
+                                                () -> VgtuConfig.targetFps)
+                                        .setStorageHandler(STORAGE_HANDLER))
                                 .addOption(builder.createBooleanOption(Identifier.parse("vgtu:temporal_accumulation"))
                                         .setName(Component.literal("Temporal Accumulation"))
                                         .setTooltip(Component.literal(
                                                 "Uses Vitrail's optional history-fold pass. It only runs with an active Vitrail pack and render scale below 100%; moving entities may ghost."))
                                         .setDefaultValue(false)
                                         .setBinding(VgtuConfigEntryPoint::setTemporal,
-                                                VitrailBridge::isTemporalAccumulationWanted)))
+                                                VitrailBridge::isTemporalAccumulationWanted)
+                                        .setStorageHandler(STORAGE_HANDLER)))
                         .addOptionGroup(builder.createOptionGroup()
                                 .setName(Component.literal("Adaptive response"))
                                 .addOption(builder.createIntegerOption(Identifier.parse("vgtu:scale_step"))
@@ -77,7 +85,8 @@ public final class VgtuConfigEntryPoint implements ConfigEntryPoint {
                                         .setValueFormatter(value -> Component.literal(value + "%"))
                                         .setDefaultValue(3)
                                         .setBinding(VgtuConfigEntryPoint::setStep,
-                                                () -> VgtuConfig.step))));
+                                                () -> VgtuConfig.step)
+                                        .setStorageHandler(STORAGE_HANDLER))));
     }
 
     private static void setTemporal(boolean enabled) {
