@@ -15,6 +15,9 @@
   "entrypoints": {
     "client": [
       "dev.vgtu.VgtuClient"
+    ],
+    "sodium:config_api_user": [
+      "dev.vgtu.gui.VgtuConfigEntryPoint"
     ]
   },
   "mixins": [
