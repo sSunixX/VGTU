@@ -20,6 +20,10 @@ repositories {
             includeGroup "maven.modrinth"
         }
     }
+    maven {
+        name = "CaffeineMC"
+        url = "https://maven.caffeinemc.net/releases"
+    }
 }
 
 dependencies {
@@ -28,6 +32,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
     compileOnly "maven.modrinth:oSIKhgz3:${vitrail_version}"
+    compileOnly "net.caffeinemc:sodium-fabric-api:${sodium_api_version}"
 }
 
 processResources {
